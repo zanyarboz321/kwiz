@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ku">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geography Flashcards</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #818cf8;
+    --green: #16a34a;
+    --red: #dc2626;
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --accent: #fbbf24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+  }
+
+  /* ===== TABS ===== */
+  .tab-bar {
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .tab {
+    flex: 1; padding: 14px 10px; text-align: center;
+    font-weight: 600; font-size: 13px; cursor: pointer;
+    color: var(--muted); border-bottom: 3px solid transparent;
+    transition: all .2s; background: none; border-top: none;
+    border-left: none; border-right: none;
+  }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .page { display: none; padding: 1.5rem 1rem; max-width: 550px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ===== FLASHCARD PAGE ===== */
+  .controls { display: flex; gap: 8px; margin-bottom: 1.2rem; }
+  .topic-sel {
+    flex: 1; padding: 10px 12px; border-radius: 12px;
+    border: 1.5px solid var(--border); outline: none;
+    font-family: inherit; font-size: 14px; background: #fff;
+  }
+  .icon-btn {
+    padding: 10px 14px; border: none; border-radius: 12px;
+    background: var(--primary); color: #fff; cursor: pointer;
+    font-size: 16px; transition: opacity .2s;
+  }
+  .icon-btn:hover { opacity: .85; }
+
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 1.4rem; }
+  .stat {
+    background: #fff; border-radius: 12px; padding: 10px 6px;
+    text-align: center; border: 1.5px solid var(--border);
+  }
+  .stat-n { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .stat-l { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .card-area { margin-bottom: 1.2rem; }
+  .card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 2.5rem 1.8rem;
+    box-shadow: 0 8px 24px -4px rgba(0,0,0,0.1);
+    min-height: 230px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    border: 1.5px solid var(--border);
+    transition: transform .2s;
+  }
+  .card:hover { transform: translateY(-3px); }
+
+  .card-topic-badge {
+    position: absolute; top: 14px; left: 14px;
+    background: var(--primary); color: #fff;
+    font-size: 10px; font-weight: 600; padding: 3px 8px;
+    border-radius: 20px; opacity: .85;
+  }
+  .card-en {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px; font-weight: 700; text-align: center;
+    margin-bottom: 12px;
+  }
+  .card-ku {
+    font-size: 20px; color: var(--primary); direction: rtl;
+    font-weight: 600; text-align: center;
+  }
+  .card-hint { margin-top: 18px; font-size: 12px; color: var(--muted); }
+
+  .btns { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; padding: 13px; border: none; border-radius: 14px;
+    font-weight: 600; cursor: pointer; transition: all .15s;
+    font-family: inherit; font-size: 14px;
+  }
+  .btn:hover { opacity: .88; transform: scale(1.01); }
+  .btn-flip { background: var(--primary); color: #fff; }
+  .btn-know { background: var(--green); color: #fff; }
+  .btn-nope { background: var(--red); color: #fff; }
+  .btn-skip { background: var(--border); color: var(--muted); flex: 0; padding: 13px 16px; }
+
+  /* skip animation */
+  .card.skip-anim { animation: slideOut .3s ease forwards; }
+  @keyframes slideOut { to { opacity: 0; transform: translateX(60px); } }
+
+  /* ===== MANAGE PAGE ===== */
+  .section-title {
+    font-size: 15px; font-weight: 700; color: var(--text);
+    margin-bottom: 10px; margin-top: 1.2rem;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* Topic list */
+  .topic-list { display: flex; flex-direction: column; gap: 6px; }
+  .topic-item {
+    background: #fff; border-radius: 12px; padding: 11px 14px;
+    border: 1.5px solid var(--border); display: flex;
+    align-items: center; gap: 10px; cursor: pointer;
+    transition: border-color .15s;
+  }
+  .topic-item.selected { border-color: var(--primary); }
+  .topic-name { flex: 1; font-weight: 600; font-size: 14px; }
+  .topic-count { font-size: 12px; color: var(--muted); }
+  .topic-del { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 2px 6px; }
+
+  /* Word list */
+  .word-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; }
+  .word-item {
+    background: #fff; border-radius: 10px; padding: 10px 12px;
+    border: 1.5px solid var(--border); display: flex;
+    align-items: center; gap: 8px;
+  }
+  .word-en { font-weight: 600; font-size: 13px; flex: 1; }
+  .word-ku { font-size: 13px; color: var(--primary); direction: rtl; flex: 1; text-align: right; }
+  .word-actions { display: flex; gap: 4px; }
+  .word-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 3px 6px; border-radius: 6px; }
+  .word-btn:hover { background: var(--border); }
+  .word-btn.del { color: var(--red); }
+  .word-btn.edit { color: var(--primary); }
+
+  /* Add forms */
+  .add-form {
+    background: #fff; border-radius: 14px; padding: 14px;
+    border: 1.5px solid var(--border); margin-bottom: 10px;
+  }
+  .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .inp {
+    flex: 1; padding: 9px 12px; border-radius: 10px;
+    border: 1.5px solid var(--border); outline: none;
+    font-family: inherit; font-size: 13px; transition: border-color .15s;
+  }
+  .inp:focus { border-color: var(--primary); }
+  .inp[dir="rtl"] { text-align: right; }
+  .btn-add {
+    padding: 9px 16px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-weight: 600;
+    cursor: pointer; font-family: inherit; font-size: 13px;
+    transition: opacity .15s;
+  }
+  .btn-add:hover { opacity: .85; }
+  .btn-add.green { background: var(--green); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 200;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 18px; padding: 1.5rem;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 20px 40px -8px rgba(0,0,0,.2);
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 14px; }
+  .modal .form-row { margin-bottom: 10px; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-cancel {
+    flex: 1; padding: 10px; border: 1.5px solid var(--border);
+    border-radius: 10px; background: none; cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 13px;
+  }
+  .btn-save {
+    flex: 1; padding: 10px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 13px;
+  }
+
+  .empty-state { text-align: center; color: var(--muted); padding: 2rem; font-size: 14px; }
+
+  .hidden { display: none !important; }
+  .badge-new {
+    background: var(--accent); color: #000; font-size: 10px;
+    font-weight: 700; padding: 2px 6px; border-radius: 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('study')">📖 خوێندنەوە</button>
+  <button class="tab" onclick="switchTab('manage')">⚙️ ئیدارەکردن</button>
+</div>
+
+<!-- ===== STUDY PAGE ===== -->
+<div class="page active" id="page-study">
+  <div class="controls">
+    <select class="topic-sel" id="topicSel" onchange="changeTopic()"></select>
+    <button class="icon-btn" onclick="shuffle()" title="شەرکردن">🔀</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="sTotal">0</div><div class="stat-l">کۆ</div></div>
+    <div class="stat"><div class="stat-n" id="sKnow" style="color:var(--green)">0</div><div class="stat-l">زانیم</div></div>
+    <div class="stat"><div class="stat-n" id="sNope" style="color:var(--red)">0</div><div class="stat-l">نازانم</div></div>
+    <div class="stat"><div class="stat-n" id="sLeft">0</div><div class="stat-l">ماوە</div></div>
+  </div>
+
+  <div class="card-area">
+    <div class="card" id="card" onclick="flipCard()">
+      <span class="card-topic-badge" id="cBadge"></span>
+      <span class="card-en" id="cEn">...</span>
+      <span class="card-ku hidden" id="cKu"></span>
+      <small class="card-hint" id="cHint">تێبینی: کلیک بکە بۆ بینینی مانا</small>
+    </div>
+  </div>
+
+  <div class="btns" id="btns">
+    <button class="btn btn-skip" onclick="skipCard()" title="بگوزەرێتەوە">⏭</button>
+    <button class="btn btn-flip" onclick="flipCard()">بینینی مانا</button>
+  </div>
+</div>
+
+<!-- ===== MANAGE PAGE ===== -->
+<div class="page" id="page-manage">
+
+  <div class="section-title">بابەتەکان</div>
+
+  <!-- Add new topic -->
+  <div class="add-form">
+    <div class="form-row">
+      <input class="inp" id="newTopicName" placeholder="ناوی بابەتی نوێ (English)">
+      <button class="btn-add" onclick="addTopic()">+ زیادکردن</button>
+    </div>
+  </div>
+
+  <div class="topic-list" id="topicList"></div>
+
+  <!-- Words for selected topic -->
+  <div id="wordsSection" class="hidden">
+    <div class="section-title" id="wordsSectionTitle">وشەکان</div>
+
+    <!-- Add new word -->
+    <div class="add-form">
+      <div class="form-row">
+        <input class="inp" id="newWordEn" placeholder="وشەی ئینگلیزی">
+        <input class="inp" id="newWordKu" placeholder="مانای کوردی" dir="rtl">
+      </div>
+      <div class="form-row">
+        <button class="btn-add green" onclick="addWord()" style="width:100%">+ زیادکردنی وشە</button>
+      </div>
+    </div>
+
+    <div class="word-list" id="wordList"></div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>دەستکاریکردنی وشە</h3>
+    <div class="form-row"><input class="inp" id="editEn" placeholder="وشەی ئینگلیزی"></div>
+    <div class="form-row"><input class="inp" id="editKu" placeholder="مانای کوردی" dir="rtl"></div>
+    <input type="hidden" id="editTopicIdx">
+    <input type="hidden" id="editWordIdx">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">ڕەتکردنەوە</button>
+      <button class="btn-save" onclick="saveEdit()">پاشەکەوتکردن</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const defaultTopics = [
+  {name:"What is Geography",words:[["Studies","لێدەکۆلێتەوە"],["Spatial","شوێنی"],["Patterns","شێوازەکان"],["Human","مرۆیی"],["Physical","سروشتی"],["Including","دەگرێتەخۆ"],["Subject matter","بابەتی جێی خۆیی"],["Immediately","راستەوخۆ"],["Structures","پێکهاتەکان"],["Social","کۆمەڵایەتی"],["Cultural","کلتووری"],["Environments","ژینگەکان"],["Examine","لێدەکۆڵێتەوە"],["Natural","سروشتی"],["Features","شێوەکان"],["Earth's surface","رووی زەوی"],["Distributed","دابەشبوون"],["Change over time","بە پێی تێپەڕبوونی کات دەگۆڕێت"],["Vegetation","رووپۆشی رووەکی"],["Attempt","هەوڵدەدەن"],["Explain","ڕوونیبکەنەوە"]]},
+  {name:"Location",words:[["Location","پێگە (جێگه)"],["Objects","شتەکان"],["Absolute location","پێگەی ڕەها"],["Identification","ناسنامە"],["Precise","دەقیق / ورد"],["Accepted","پەسەندکراو"],["Coordinates","پۆینتەکان"],["Therefore","بۆیە"],["Mathematical location","پێگەی ماتماتیکی"],["Position","هەڵکەوتە"],["Expresses","گوزارشتدەکات لە"],["Spatial interconnections","پەیوەندیە شوێنیەکان"],["Interdependence","بەیکەوەبەستراوی"],["Implications","گرنگیەکان"],["Cardinal","خاڵی سەرەکیەکان"],["Uniformly","یەکگرتودا"],["Independently","بەسەربەخۆیی"],["Obvious","ئاشکرا"],["Fixed","جێبگیر / نەگۆڕ"],["Certainty","دیاریکراو"],["The rising","هەڵهاتن"],["Setting","ئاوابوون"]]},
+  {name:"Directions",words:[["Relative directions","ئارستەی پەیوەندیدار"],["Culturally based","بنەماکانی کلتووری هەیە"],["Locationally variable","بە پێی پێگە دەگۆڕێت"],["Cardinal points","خاڵی سەرەکیەکان"],["Compass","قیبلەنما"],["Near","نزیک"],["Far","دوور"],["East","رووژهەڵات"],["Asia","ئاسیا"],["Perspective","تێرواینی (دید)"]]},
+  {name:"Distance",words:[["Distance","دووری / مەسافە"],["Refers to","ئاماژەیە بۆ"],["Spatial separation","لێکجیاکردنەوەی شوێن"],["Measured by","لێوانکراو بە"],["Standard","یەکەیەکی ستانداردی"],["Mile","میل"],["Relative distance","مەودای ڕێژەی"],["Transforms","دەگۆڕێت"],["More meaningful","مانادارتر"],["Based on","بەپێی"],["Factors","هۆکارەکان"],["Cost","تێچوون"],["Effort required","کۆشش پێویست"],["Bounded space","سنوردار"],["Variety","جۆراوجۆر"],["State","ویلایەت"],["Neighborhood","گەڕەک"],["Boundaries","سنوورەکان"],["Edges","لێوارەکان"],["Limits","سنووردارییەکان"],["Territory","ناوچە / هرێم"]]},
+  {name:"Place & Space",words:[["Space","بۆشای"],["Often considered as","واسەیردەکرێت"],["Land","زەوی"],["Ownership","خاوەندارێتی"],["Property","مولک"],["Impact","کاریگەری"],["Human behavior","رەفتاری مرۆف"],["Architecture","تەلارسازی"],["Farming system","سیستەمی کشتوکاڵی"],["Movement","جووڵە"],["Flow","جووڵەکردن / لێشاو"],["People","خەڵک"],["Goods","کاڵاکان"],["Ideas","برۆکەکان"],["Information","زانیاری"],["The interconnectedness","بەیەکەوەبەستراوی"],["Understand","تێگەیشتن"]]},
+  {name:"Physical Geography",words:[["Physical geography","جوگرافیای سروشتی"],["Branch","لق"],["Natural environment","ژینگەی سروشتی"],["Natural processes","پرۆسەی سروشتی"],["Shape","لەقاڵبدەدات"],["Physical elements","توخمە سروشتیەکان"],["Interact","کارلێکدەکەن"],["Influence","کاردەکاتەسەر"],["Human life","ژیانی مرۆف"],["Geomorphology","زانستی شێوەکانی رووی زەوی"],["Land forms","شێوەکانی رووی زەوی"],["Rivers","رووبارەکان"],["Hills","گردەکان"],["Plains","دەشتەکان"],["Beaches","کەنارەکان"],["Sand dunes","تەپوکەچیاکان"],["Hydrology","زانستی ئاو"],["Distribution","دابەشبوون"],["Fresh water","ئاوی شیرین"],["Glaciology","زانستی بەفروسەهۆڵ"],["Ice","سەهۆڵ"],["Snow","بەفر"]]},
+  {name:"Soil & Biogeography",words:[["Soil Geography","جووگرافیای خاک"],["Formation","دروستبوون"],["Biogeography","جووگرافیای زیندەی"],["Animal","ئاژەڵ"],["Plant","رووەک"],["Species","جۆرەکان"],["Physical environment","ژینگەی سروشتی"],["Shaped","لەقالیبدا"],["Climatology","زانستی ئاووهەوا"],["Average","تێکڕا"],["Weather conditions","دۆخە کەشییەکان"],["Air temperature","پلەی گەرمی هەوا"],["Air humidity","پلەی شێداری هەوا"],["Winds","بایەکان"],["Precipitation","دابارین"]]},
+  {name:"Human Geography",words:[["Human Geography","جووگرافیای مرۆیی"],["Population Geography","جووگرافیای دانیشوان"],["Density","جڕی"],["Political Geography","جووگرافیای سیاسی"],["Control","کۆنتروڵکردن"],["Purposes","مەبەستەکان"],["Economic Geography","جووگرافیای ئابووری"],["Economic activity","چالاکی ئابووری"],["Cultural Geography","جووگرافیای کلتووری"],["Cultural values","بەهای کلتوریەکان"],["Cultural diversity","فرەچەشنی کلتووری"],["Society","کۆمەڵگا"],["Social Geography","جووگرافی کۆمەڵایەتی"],["Ethnicity","رەگەز / نەتەوە"],["Religion","ئایین"],["Gender","ڕەگەزی کۆمەڵایەتی"],["Age","تەمەن"]]}
+];
+
+// Load from localStorage or use defaults
+function loadData() {
+  try {
+    const saved = localStorage.getItem('geo_topics');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(defaultTopics));
+}
+function saveData() {
+  localStorage.setItem('geo_topics', JSON.stringify(topics));
+}
+
+let topics = loadData();
+
+// Excluded words per topic: {topicName: Set of english words}
+let excluded = JSON.parse(localStorage.getItem('geo_excluded') || '{}');
+function saveExcluded() { localStorage.setItem('geo_excluded', JSON.stringify(excluded)); }
+
+// ===== STUDY LOGIC =====
+let deck=[], idx=0, flipped=false, knowCount=0, nopeCount=0;
+let selectedManageTopic = null;
+
+function getActiveDeck(topicIdx) {
+  let words = [];
+  if (topicIdx === 'all') {
+    topics.forEach(t => {
+      const ex = excluded[t.name] || [];
+      t.words.forEach(w => {
+        if (!ex.includes(w[0])) words.push({en:w[0],ku:w[1],topic:t.name});
+      });
+    });
+  } else {
+    const t = topics[parseInt(topicIdx)];
+    if (!t) return [];
+    const ex = excluded[t.name] || [];
+    words = t.words.filter(w => !ex.includes(w[0])).map(w => ({en:w[0],ku:w[1],topic:t.name}));
+  }
+  return words;
+}
+
+function buildDeck(topicIdx) {
+  deck = getActiveDeck(topicIdx);
+  // shuffle
+  for (let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  idx=0; knowCount=0; nopeCount=0; flipped=false;
+  updateStats(); showCard();
+}
+
+function changeTopic() { buildDeck(document.getElementById('topicSel').value); }
+function shuffle() { buildDeck(document.getElementById('topicSel').value); }
+
+function showCard() {
+  if (idx >= deck.length) {
+    document.getElementById('cBadge').textContent = '';
+    document.getElementById('cEn').textContent = knowCount === deck.length ? '🎉 تەواو بوو!' : '✅ تەواو';
+    document.getElementById('cKu').textContent = `زانیت: ${knowCount} | نەزانیت: ${nopeCount}`;
+    document.getElementById('cKu').classList.remove('hidden');
+    document.getElementById('cHint').classList.add('hidden');
+    document.getElementById('btns').innerHTML = '<button class="btn btn-flip" onclick="shuffle()">دووبارە 🔀</button>';
+    return;
+  }
+  const c = deck[idx];
+  document.getElementById('cBadge').textContent = c.topic;
+  document.getElementById('cEn').textContent = c.en;
+  document.getElementById('cKu').textContent = c.ku;
+  document.getElementById('cKu').classList.add('hidden');
+  document.getElementById('cHint').classList.remove('hidden');
+  document.getElementById('btns').innerHTML =
+    '<button class="btn btn-skip" onclick="skipCard()" title="بگوزەرێتەوە">⏭</button>' +
+    '<button class="btn btn-flip" onclick="flipCard()">بینینی مانا</button>';
+  flipped = false;
+}
+
+function flipCard() {
+  if (flipped) return;
+  flipped = true;
+  document.getElementById('cKu').classList.remove('hidden');
+  document.getElementById('cHint').classList.add('hidden');
+
+  const c = deck[idx];
+  const topicName = c.topic;
+  const wordEn = c.en;
+
+  document.getElementById('btns').innerHTML =
+    `<button class="btn btn-nope" onclick="answer(false)">✗ نازانم</button>` +
+    `<button class="btn btn-skip" onclick="excludeWord('${topicName}','${wordEn.replace(/'/g,"\\'")}')">🗑 لابردن</button>` +
+    `<button class="btn btn-know" onclick="answer(true)">✓ زانیم</button>`;
+}
+
+function answer(know) {
+  if (know) knowCount++; else nopeCount++;
+  idx++;
+  updateStats();
+  showCard();
+}
+
+function skipCard() {
+  // move current card to end
+  const c = deck.splice(idx, 1)[0];
+  deck.push(c);
+  showCard();
+}
+
+function excludeWord(topicName, wordEn) {
+  if (!excluded[topicName]) excluded[topicName] = [];
+  if (!excluded[topicName].includes(wordEn)) excluded[topicName].push(wordEn);
+  saveExcluded();
+  idx++;
+  updateStats();
+  const d = getActiveDeck(document.getElementById('topicSel').value);
+  deck = d;
+  // Recalculate remaining by re-filtering
+  buildDeck(document.getElementById('topicSel').value);
+}
+
+function updateStats() {
+  const remaining = deck.length - idx;
+  document.getElementById('sTotal').textContent = deck.length;
+  document.getElementById('sKnow').textContent = knowCount;
+  document.getElementById('sNope').textContent = nopeCount;
+  document.getElementById('sLeft').textContent = remaining > 0 ? remaining : 0;
+}
+
+// ===== TOPIC SELECT POPULATION =====
+function populateSelect() {
+  const sel = document.getElementById('topicSel');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="all">هەموو بابەتەکان</option>';
+  topics.forEach((t, i) => {
+    const ex = excluded[t.name] ? excluded[t.name].length : 0;
+    const left = t.words.length - ex;
+    sel.innerHTML += `<option value="${i}">${t.name} (${left})</option>`;
+  });
+  // restore selection if still valid
+  if (prev === 'all' || (parseInt(prev) < topics.length)) sel.value = prev;
+}
+
+// ===== MANAGE PAGE =====
+function renderTopicList() {
+  const el = document.getElementById('topicList');
+  if (topics.length === 0) {
+    el.innerHTML = '<div class="empty-state">هیچ بابەتێک نیە</div>';
+    return;
+  }
+  el.innerHTML = topics.map((t, i) => {
+    const ex = excluded[t.name] ? excluded[t.name].length : 0;
+    const active = selectedManageTopic === i;
+    return `<div class="topic-item ${active?'selected':''}" onclick="selectTopic(${i})">
+      <span class="topic-name">${t.name}</span>
+      <span class="topic-count">${t.words.length - ex}/${t.words.length} وشە</span>
+      <button class="topic-del" onclick="deleteTopic(event,${i})">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function selectTopic(i) {
+  selectedManageTopic = i;
+  renderTopicList();
+  renderWordList();
+  const sec = document.getElementById('wordsSection');
+  sec.classList.remove('hidden');
+  document.getElementById('wordsSectionTitle').textContent = `وشەکانی: ${topics[i].name}`;
+}
+
+function renderWordList() {
+  if (selectedManageTopic === null) return;
+  const t = topics[selectedManageTopic];
+  const ex = excluded[t.name] || [];
+  const el = document.getElementById('wordList');
+  if (t.words.length === 0) {
+    el.innerHTML = '<div class="empty-state">هیچ وشەیەک نیە</div>';
+    return;
+  }
+  el.innerHTML = t.words.map((w, wi) => {
+    const isEx = ex.includes(w[0]);
+    return `<div class="word-item" style="${isEx?'opacity:.45':''}">
+      <span class="word-en">${w[0]} ${isEx?'<span class="badge-new">لابراو</span>':''}</span>
+      <span class="word-ku">${w[1]}</span>
+      <div class="word-actions">
+        ${isEx
+          ? `<button class="word-btn edit" onclick="restoreWord(${wi})" title="گەڕاندنەوە">↩</button>`
+          : `<button class="word-btn" onclick="excludeWordManage(${wi})" title="لابردن لە کویز" style="color:var(--accent)">👁</button>`
+        }
+        <button class="word-btn edit" onclick="openEdit(${wi})">✏️</button>
+        <button class="word-btn del" onclick="deleteWord(${wi})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function excludeWordManage(wi) {
+  const t = topics[selectedManageTopic];
+  const wordEn = t.words[wi][0];
+  if (!excluded[t.name]) excluded[t.name] = [];
+  if (!excluded[t.name].includes(wordEn)) excluded[t.name].push(wordEn);
+  saveExcluded();
+  renderWordList();
+  renderTopicList();
+  populateSelect();
+}
+
+function restoreWord(wi) {
+  const t = topics[selectedManageTopic];
+  const wordEn = t.words[wi][0];
+  if (excluded[t.name]) {
+    excluded[t.name] = excluded[t.name].filter(e => e !== wordEn);
+  }
+  saveExcluded();
+  renderWordList();
+  renderTopicList();
+  populateSelect();
+}
+
+function addTopic() {
+  const name = document.getElementById('newTopicName').value.trim();
+  if (!name) return;
+  topics.push({name, words:[]});
+  saveData();
+  document.getElementById('newTopicName').value = '';
+  renderTopicList();
+  populateSelect();
+  selectTopic(topics.length - 1);
+}
+
+function deleteTopic(e, i) {
+  e.stopPropagation();
+  if (!confirm(`بابەتی "${topics[i].name}" بسڕدرێتەوە؟`)) return;
+  topics.splice(i, 1);
+  saveData();
+  if (selectedManageTopic === i) {
+    selectedManageTopic = null;
+    document.getElementById('wordsSection').classList.add('hidden');
+  } else if (selectedManageTopic > i) {
+    selectedManageTopic--;
+  }
+  renderTopicList();
+  populateSelect();
+}
+
+function addWord() {
+  if (selectedManageTopic === null) return;
+  const en = document.getElementById('newWordEn').value.trim();
+  const ku = document.getElementById('newWordKu').value.trim();
+  if (!en || !ku) return;
+  topics[selectedManageTopic].words.push([en, ku]);
+  saveData();
+  document.getElementById('newWordEn').value = '';
+  document.getElementById('newWordKu').value = '';
+  renderWordList();
+  renderTopicList();
+  populateSelect();
+}
+
+function deleteWord(wi) {
+  if (!confirm('ئەم وشەیە بسڕدرێتەوە؟')) return;
+  const t = topics[selectedManageTopic];
+  const wordEn = t.words[wi][0];
+  t.words.splice(wi, 1);
+  // also remove from excluded
+  if (excluded[t.name]) excluded[t.name] = excluded[t.name].filter(e => e !== wordEn);
+  saveData(); saveExcluded();
+  renderWordList(); renderTopicList(); populateSelect();
+}
+
+function openEdit(wi) {
+  const t = topics[selectedManageTopic];
+  document.getElementById('editEn').value = t.words[wi][0];
+  document.getElementById('editKu').value = t.words[wi][1];
+  document.getElementById('editTopicIdx').value = selectedManageTopic;
+  document.getElementById('editWordIdx').value = wi;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function saveEdit() {
+  const ti = parseInt(document.getElementById('editTopicIdx').value);
+  const wi = parseInt(document.getElementById('editWordIdx').value);
+  const en = document.getElementById('editEn').value.trim();
+  const ku = document.getElementById('editKu').value.trim();
+  if (!en || !ku) return;
+  const oldEn = topics[ti].words[wi][0];
+  topics[ti].words[wi] = [en, ku];
+  // update excluded key if changed
+  if (oldEn !== en && excluded[topics[ti].name]) {
+    excluded[topics[ti].name] = excluded[topics[ti].name].map(e => e === oldEn ? en : e);
+    saveExcluded();
+  }
+  saveData();
+  closeModal();
+  renderWordList();
+}
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['study','manage'][i]===tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if (tab === 'manage') { renderTopicList(); }
+}
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ===== INIT =====
+populateSelect();
+buildDeck('all');
+</script>
+</body>
+</html>
